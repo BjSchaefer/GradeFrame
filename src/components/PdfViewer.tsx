@@ -32,7 +32,6 @@ export function PdfViewer({
   onPageClick,
   onDeleteAnnotation,
 }: PdfViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);

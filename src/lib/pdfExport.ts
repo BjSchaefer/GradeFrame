@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, type PDFFont } from "pdf-lib";
 import type { Annotation } from "./types";
 
 interface ExportOptions {
@@ -10,7 +10,6 @@ interface ExportOptions {
 export async function createAnnotatedPdf({
   pdfBytes,
   annotations,
-  filename,
 }: ExportOptions): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -86,7 +85,7 @@ export async function createAnnotatedPdf({
           y: descStartY - i * 10,
           size: 7,
           font: helvetica,
-          color: rgb(1, 1, 1, 0.85),
+          color: rgb(1, 1, 1),
         });
       });
     }
@@ -98,7 +97,7 @@ export async function createAnnotatedPdf({
 function wrapText(
   text: string,
   maxWidth: number,
-  font: ReturnType<typeof StandardFonts.Helvetica extends infer T ? never : never>,
+  _font: PDFFont,
   fontSize: number
 ): string[] {
   const words = text.split(" ");
@@ -122,7 +121,7 @@ function wrapText(
 }
 
 export function downloadBlob(bytes: Uint8Array, filename: string) {
-  const blob = new Blob([bytes], { type: "application/pdf" });
+  const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

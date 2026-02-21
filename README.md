@@ -49,14 +49,14 @@ gradeframe/
 
 ## Working Directory
 
-When you open a folder, GradeFrame creates a `.config.json` file that stores:
+When you open a folder, GradeFrame creates a `gradeframe.config.json` file that stores:
 - Task definitions and correction modes
 - Comment stamp templates
 - Annotations and points per PDF
 
 ```
 YourFolder/
-├── .config.json            # Auto-managed by GradeFrame
+├── gradeframe.config.json  # Auto-managed by GradeFrame
 ├── Student_A.pdf
 ├── Student_B.pdf
 └── ...

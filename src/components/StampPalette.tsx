@@ -9,6 +9,7 @@ interface StampPaletteProps {
   activeStamp: ActiveStamp | null;
   activeMode: CorrectionMode;
   activeTaskLabel: string;
+  width?: number;
   onSelectStamp: (stamp: ActiveStamp | null) => void;
   onCreateStamp: (stamp: CommentStamp) => void;
 }
@@ -20,6 +21,7 @@ export function StampPalette({
   activeStamp,
   activeMode,
   activeTaskLabel,
+  width,
   onSelectStamp,
   onCreateStamp,
 }: StampPaletteProps) {
@@ -57,7 +59,10 @@ export function StampPalette({
 
   if (activeMode === "manual") {
     return (
-      <aside className="w-60 bg-white border-r border-stone-200 flex flex-col shrink-0 shadow-sm">
+      <aside
+        className="bg-white border-r border-stone-200 flex flex-col shrink-0 shadow-sm"
+        style={{ width: width ?? 240 }}
+      >
         <div className="flex-1 overflow-y-auto p-3">
           <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 mt-1">
             <div className="flex items-center gap-2 mb-1.5">
@@ -77,7 +82,10 @@ export function StampPalette({
   }
 
   return (
-    <aside className="w-60 bg-white border-r border-stone-200 flex flex-col shrink-0 shadow-sm">
+    <aside
+      className="bg-white border-r border-stone-200 flex flex-col shrink-0 shadow-sm"
+      style={{ width: width ?? 240 }}
+    >
       <div className="flex-1 overflow-y-auto p-3 space-y-5">
         {/* Point Stamps */}
         <div>

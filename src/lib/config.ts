@@ -54,15 +54,20 @@ export async function saveConfig(
 
 export async function listPdfFiles(folderPath: string): Promise<string[]> {
   // Use Tauri's readDir to list files
-  const { readDir } = await import("@tauri-apps/plugin-fs");
-  const entries = await readDir(folderPath);
+  try {
+    const { readDir } = await import("@tauri-apps/plugin-fs");
+    const entries = await readDir(folderPath);
 
-  return entries
-    .filter(
-      (entry) =>
-        entry.name?.toLowerCase().endsWith(".pdf") &&
-        !entry.name?.startsWith(".")
-    )
-    .map((entry) => entry.name!)
-    .sort((a, b) => a.localeCompare(b));
+    return entries
+      .filter(
+        (entry) =>
+          entry.name?.toLowerCase().endsWith(".pdf") &&
+          !entry.name?.startsWith(".")
+      )
+      .map((entry) => entry.name!)
+      .sort((a, b) => a.localeCompare(b));
+  } catch (err) {
+    console.error("Failed to list PDF files:", err);
+    return [];
+  }
 }

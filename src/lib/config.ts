@@ -23,8 +23,12 @@ export async function loadConfig(folderPath: string): Promise<ProjectConfig> {
     const name = parts[parts.length - 1] || "Untitled";
     const cfg = defaultConfig(name);
     // Auto-create the config file on first open
-    const content = JSON.stringify(cfg, null, 2);
-    await writeTextFile(configPath, content);
+    try {
+      const content = JSON.stringify(cfg, null, 2);
+      await writeTextFile(configPath, content);
+    } catch (err) {
+      console.error("Failed to create gradeframe.config.json:", err);
+    }
     return cfg;
   }
 

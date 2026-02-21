@@ -199,7 +199,7 @@ export function TaskPanel({
               text-teal-600 hover:bg-teal-50 border border-dashed border-teal-300 transition-all cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
-            {tasks.length === 0 ? "Create task" : "Add Task"}
+            {tasks.length === 0 ? "Create Task" : "Add Task"}
           </button>
         )}
         {showAddTask && (

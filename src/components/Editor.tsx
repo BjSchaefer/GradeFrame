@@ -31,35 +31,43 @@ export function Editor({ folderPath, onBack }: EditorProps) {
   const [activeStamp, setActiveStamp] = useState<ActiveStamp | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [manualPoints, setManualPoints] = useState<Record<string, number>>({});
+  const [error, setError] = useState<string | null>(null);
 
   // Load config and PDF list on mount
   useEffect(() => {
     async function init() {
-      const [cfg, pdfNames] = await Promise.all([
-        loadConfig(folderPath),
-        listPdfFiles(folderPath),
-      ]);
+      try {
+        const [cfg, pdfNames] = await Promise.all([
+          loadConfig(folderPath),
+          listPdfFiles(folderPath),
+        ]);
 
-      setConfig(cfg);
-      const pdfFiles = pdfNames.map((name) => ({
-        filename: name,
-        path: `${folderPath}/${name}`,
-      }));
-      setPdfs(pdfFiles);
+        setConfig(cfg);
+        const pdfFiles = pdfNames.map((name) => ({
+          filename: name,
+          path: `${folderPath}/${name}`,
+        }));
+        setPdfs(pdfFiles);
 
-      if (pdfFiles.length > 0) setActiveFilename(pdfFiles[0].filename);
-      if (cfg.tasks.length > 0) setActiveTaskId(cfg.tasks[0].id);
+        if (pdfFiles.length > 0) setActiveFilename(pdfFiles[0].filename);
+        if (cfg.tasks.length > 0) setActiveTaskId(cfg.tasks[0].id);
 
-      // Restore manual points from config
-      const mp: Record<string, number> = {};
-      for (const [filename, grading] of Object.entries(cfg.grading)) {
-        for (const [taskId, points] of Object.entries(
-          grading.manualPoints || {}
-        )) {
-          mp[`${filename}_${taskId}`] = points;
+        // Restore manual points from config
+        const mp: Record<string, number> = {};
+        for (const [filename, grading] of Object.entries(cfg.grading)) {
+          for (const [taskId, points] of Object.entries(
+            grading.manualPoints || {}
+          )) {
+            mp[`${filename}_${taskId}`] = points;
+          }
         }
+        setManualPoints(mp);
+      } catch (err) {
+        console.error("Failed to initialize editor:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to open folder."
+        );
       }
-      setManualPoints(mp);
     }
 
     init();
@@ -78,7 +86,45 @@ export function Editor({ folderPath, onBack }: EditorProps) {
     [folderPath]
   );
 
-  if (!config) return null;
+  if (error) {
+    return (
+      <div className="h-screen bg-stone-100 flex flex-col">
+        <header className="bg-white border-b border-stone-200 shrink-0 shadow-sm">
+          <div className="flex items-center h-12 px-4">
+            <GradeFrameLogo />
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            <p className="text-red-600 text-sm font-medium mb-4">{error}</p>
+            <button
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium
+                bg-stone-200 text-stone-700 hover:bg-stone-300 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Start
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!config) {
+    return (
+      <div className="h-screen bg-stone-100 flex flex-col">
+        <header className="bg-white border-b border-stone-200 shrink-0 shadow-sm">
+          <div className="flex items-center h-12 px-4">
+            <GradeFrameLogo />
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-stone-400 text-sm">Loading project…</p>
+        </div>
+      </div>
+    );
+  }
 
   const tasks = config.tasks;
   const stamps = config.stamps;

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings, X, Plus } from "lucide-react";
+import { Pencil, X, Plus } from "lucide-react";
 import type { Task, CorrectionMode } from "@/lib/types";
 
 interface TaskPanelProps {
@@ -56,11 +56,11 @@ export function TaskPanel({
           className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
             editing
               ? "bg-teal-100 text-teal-700"
-              : "text-stone-400 hover:bg-stone-100"
+              : "text-stone-500 hover:text-teal-600 hover:bg-stone-100"
           }`}
           title="Edit tasks"
         >
-          <Settings className="h-3.5 w-3.5" />
+          <Pencil className="h-4 w-4" />
         </button>
       </div>
 

@@ -2,7 +2,7 @@ import { readTextFile, writeTextFile, exists } from "@tauri-apps/plugin-fs";
 import { join } from "@tauri-apps/api/path";
 import type { ProjectConfig } from "./types";
 
-const CONFIG_FILENAME = ".config.json";
+const CONFIG_FILENAME = "gradeframe.config.json";
 
 function defaultConfig(name: string): ProjectConfig {
   return {
@@ -36,7 +36,7 @@ export async function loadConfig(folderPath: string): Promise<ProjectConfig> {
       grading: config.grading || {},
     };
   } catch (err) {
-    console.error("Failed to parse .config.json:", err);
+    console.error("Failed to parse gradeframe.config.json:", err);
     const parts = folderPath.replace(/\\/g, "/").split("/");
     const name = parts[parts.length - 1] || "Untitled";
     return defaultConfig(name);

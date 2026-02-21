@@ -191,15 +191,15 @@ export function TaskPanel({
           })}
         </div>
 
-        {/* Add Task */}
-        {editing && !showAddTask && (
+        {/* Add Task / Create task (always visible when no tasks exist) */}
+        {(editing || tasks.length === 0) && !showAddTask && (
           <button
             onClick={() => setShowAddTask(true)}
             className="w-full mt-2 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium
               text-teal-600 hover:bg-teal-50 border border-dashed border-teal-300 transition-all cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Task
+            {tasks.length === 0 ? "Create task" : "Add Task"}
           </button>
         )}
         {showAddTask && (

@@ -96,7 +96,10 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         </header>
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center">
-            <p className="text-red-600 text-sm font-medium mb-4">{error}</p>
+            <p className="text-red-600 text-sm font-medium mb-4">
+              Could not open this folder. Please check that it exists and try
+              again.
+            </p>
             <button
               onClick={onBack}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium

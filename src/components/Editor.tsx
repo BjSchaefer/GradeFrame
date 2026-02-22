@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Folder } from "lucide-react";
 import { loadConfig, saveConfig, listPdfFiles } from "@/lib/config";
-import { createAnnotatedPdf, downloadBlob } from "@/lib/pdfExport";
+import {
+  createAnnotatedPdf,
+  savePdfToFolder,
+  generateMarkdownReport,
+  saveMarkdownReport,
+  type ReportEntry,
+} from "@/lib/pdfExport";
 import { GradeFrameLogo } from "./GradeFrameLogo";
 import { PdfTabBar } from "./PdfTabBar";
 import { PdfViewer } from "./PdfViewer";
@@ -329,34 +335,63 @@ export function Editor({ folderPath, onBack }: EditorProps) {
   // ─── Export ────────────────────────────────────────────────
   async function handleExportCurrent() {
     if (!activeFilename) return;
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const selectedDir = await open({
+      directory: true,
+      defaultPath: folderPath,
+      title: "Select export folder",
+    });
+    if (!selectedDir) return;
+
     const { readFile } = await import("@tauri-apps/plugin-fs");
     const { join } = await import("@tauri-apps/api/path");
     const fullPath = await join(folderPath, activeFilename);
     const pdfBytes = await readFile(fullPath);
     const grading = config!.grading[activeFilename];
+    const annotations = grading?.annotations || [];
     const result = await createAnnotatedPdf({
       pdfBytes,
-      annotations: grading?.annotations || [],
+      annotations,
       filename: activeFilename,
     });
-    downloadBlob(result, activeFilename);
+    await savePdfToFolder(result, selectedDir, activeFilename);
+
+    const report = generateMarkdownReport(
+      [{ filename: activeFilename, annotations }],
+      config!.tasks
+    );
+    await saveMarkdownReport(selectedDir, report);
   }
 
   async function handleExportAll() {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const selectedDir = await open({
+      directory: true,
+      defaultPath: folderPath,
+      title: "Select export folder",
+    });
+    if (!selectedDir) return;
+
     const { readFile } = await import("@tauri-apps/plugin-fs");
     const { join } = await import("@tauri-apps/api/path");
+
+    const reportEntries: ReportEntry[] = [];
     for (const pdf of pdfs) {
       const fullPath = await join(folderPath, pdf.filename);
       const pdfBytes = await readFile(fullPath);
       const grading = config!.grading[pdf.filename];
+      const annotations = grading?.annotations || [];
       const result = await createAnnotatedPdf({
         pdfBytes,
-        annotations: grading?.annotations || [],
+        annotations,
         filename: pdf.filename,
       });
-      downloadBlob(result, pdf.filename);
-      await new Promise((r) => setTimeout(r, 300));
+      await savePdfToFolder(result, selectedDir, pdf.filename);
+      reportEntries.push({ filename: pdf.filename, annotations });
     }
+
+    const report = generateMarkdownReport(reportEntries, config!.tasks);
+    await saveMarkdownReport(selectedDir, report);
   }
 
   const activePdfPath = activeFilename

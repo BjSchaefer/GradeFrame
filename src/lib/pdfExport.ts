@@ -51,8 +51,8 @@ export async function createAnnotatedPdf({
         : rgb(0.7, 0.3, 0.3);
 
     // Build display text – append points suffix only for comment stamps (not pure point values)
-    const isLabelPointsValue = /^[+-]?\d+(\.\d+)?$/.test(ann.label);
-    const pointsStr = (ann.points !== 0 && !isLabelPointsValue)
+    const isLabelNumericOnly = /^[+-]?\d+(\.\d+)?$/.test(ann.label);
+    const pointsStr = (ann.points !== 0 && !isLabelNumericOnly)
       ? ` ${ann.points > 0 ? '+' : ''}${ann.points}P`
       : '';
     const displayText = ann.label + pointsStr;
@@ -94,9 +94,11 @@ export async function createAnnotatedPdf({
     if (ann.description) {
       const iconSize = 12;
       const iconGap = 2;
+      // NoZoom (16) + NoRotate (8) = 24
+      const annotFlags = 24;
       const annotDict = pdfDoc.context.obj({
         Type: 'Annot',
-        Subtype: 'Text',
+        Subtype: 'Text', // Text annotation = clickable popup note
         Rect: [
           boxX + boxWidth + iconGap,
           boxY,
@@ -104,9 +106,9 @@ export async function createAnnotatedPdf({
           boxY + iconSize,
         ],
         Contents: PDFString.of(ann.description),
-        Name: 'Comment',
+        Name: 'Comment', // Icon style shown in PDF viewer
         C: isPositive ? [0.3, 0.7, 0.3] : [0.7, 0.3, 0.3],
-        F: 24, // NoZoom + NoRotate
+        F: annotFlags,
       });
 
       const existingAnnots = page.node.lookup(PDFName.of('Annots'));

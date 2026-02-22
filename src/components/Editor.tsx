@@ -301,11 +301,18 @@ export function Editor({ folderPath, onBack }: EditorProps) {
       return manualPoints[`${filename}_${task.id}`] ?? 0;
     }
     const grading = config!.grading[filename];
-    const earned = (grading?.annotations || [])
-      .filter((a) => a.taskId === task.id)
-      .reduce((s, a) => s + a.points, 0);
-    if (task.mode === "subtractive")
+    const annotations = (grading?.annotations || []).filter(
+      (a) => a.taskId === task.id
+    );
+    if (task.mode === "subtractive") {
+      const earned = annotations
+        .filter((a) => a.points < 0)
+        .reduce((s, a) => s + a.points, 0);
       return Math.max(0, task.maxPoints + earned);
+    }
+    const earned = annotations
+      .filter((a) => a.points > 0)
+      .reduce((s, a) => s + a.points, 0);
     return earned;
   }
 

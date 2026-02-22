@@ -338,6 +338,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
     const { open } = await import("@tauri-apps/plugin-dialog");
     const selectedDir = await open({
       directory: true,
+      recursive: true,
       defaultPath: folderPath,
       title: "Select export folder",
     });
@@ -367,6 +368,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
     const { open } = await import("@tauri-apps/plugin-dialog");
     const selectedDir = await open({
       directory: true,
+      recursive: true,
       defaultPath: folderPath,
       title: "Select export folder",
     });

@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts, type PDFFont } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, PDFString, PDFName, PDFArray } from "pdf-lib";
 import { writeFile, mkdir, exists } from "@tauri-apps/plugin-fs";
 import { join } from "@tauri-apps/api/path";
 import type { Annotation, Task } from "./types";
@@ -14,8 +14,8 @@ export async function createAnnotatedPdf({
   annotations,
 }: ExportOptions): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(pdfBytes);
-  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const pages = pdfDoc.getPages();
 
   for (const ann of annotations) {
@@ -31,95 +31,96 @@ export async function createAnnotatedPdf({
     const y = height - (ann.y / 100) * height;
 
     const isPositive = ann.points >= 0;
-    const bgColor = isPositive ? rgb(0.16, 0.72, 0.42) : rgb(0.87, 0.25, 0.25);
-    const textColor = rgb(1, 1, 1);
+    const isNeutral = ann.points === 0;
 
-    // Build label text
-    let labelText: string;
-    if (ann.isPointStamp) {
-      labelText = `${ann.points > 0 ? "+" : ""}${ann.points}`;
-    } else {
-      labelText = ann.label;
-      if (ann.points !== 0) {
-        labelText += ` (${ann.points > 0 ? "+" : ""}${ann.points})`;
-      }
-    }
+    // Colors
+    const bgColor = isNeutral
+      ? rgb(0.94, 0.94, 0.94)
+      : isPositive
+        ? rgb(0.86, 0.96, 0.86)
+        : rgb(0.96, 0.86, 0.86);
+    const textColor = isNeutral
+      ? rgb(0.3, 0.3, 0.3)
+      : isPositive
+        ? rgb(0.1, 0.45, 0.1)
+        : rgb(0.6, 0.1, 0.1);
+    const borderColor = isNeutral
+      ? rgb(0.7, 0.7, 0.7)
+      : isPositive
+        ? rgb(0.3, 0.7, 0.3)
+        : rgb(0.7, 0.3, 0.3);
 
-    const labelWidth = helveticaBold.widthOfTextAtSize(labelText, 9);
-    const padding = 6;
-    const boxHeight = 16;
-    let totalHeight = boxHeight;
+    // Build display text – append points suffix only for comment stamps (not pure point values)
+    const isLabelNumericOnly = /^[+-]?\d+(\.\d+)?$/.test(ann.label);
+    const pointsStr = (ann.points !== 0 && !isLabelNumericOnly)
+      ? ` ${ann.points > 0 ? '+' : ''}${ann.points}P`
+      : '';
+    const displayText = ann.label + pointsStr;
 
-    // Calculate description dimensions
-    let descLines: string[] = [];
-    if (ann.description) {
-      descLines = wrapText(ann.description, 180, helvetica, 7);
-      totalHeight += descLines.length * 10 + 4;
-    }
+    // Calculate text dimensions
+    const fontSize = 8;
+    const textWidth = font.widthOfTextAtSize(displayText, fontSize);
+    const paddingH = 4;
+    const paddingV = 3;
+    const boxWidth = textWidth + paddingH * 2;
+    const boxHeight = fontSize + paddingV * 2;
 
-    const boxWidth = Math.max(labelWidth + padding * 2, ann.description ? 180 + padding * 2 : 0);
+    // Position: centered at click point
+    const boxX = x - boxWidth / 2;
+    const boxY = y - boxHeight / 2;
 
-    // Draw stamp background
+    // Background rectangle
     page.drawRectangle({
-      x: x - boxWidth / 2,
-      y: y - totalHeight / 2,
+      x: boxX,
+      y: boxY,
       width: boxWidth,
-      height: totalHeight,
+      height: boxHeight,
       color: bgColor,
-      borderWidth: 0,
+      borderColor: borderColor,
+      borderWidth: 0.5,
     });
 
-    // Draw label
-    page.drawText(labelText, {
-      x: x - labelWidth / 2,
-      y: y + totalHeight / 2 - boxHeight + 4,
-      size: 9,
-      font: helveticaBold,
+    // Text
+    page.drawText(displayText, {
+      x: boxX + paddingH,
+      y: boxY + paddingV,
+      size: fontSize,
+      font: ann.points !== 0 ? fontBold : font,
       color: textColor,
     });
 
-    // Draw description lines
-    if (descLines.length > 0) {
-      const descStartY = y + totalHeight / 2 - boxHeight - 2;
-      descLines.forEach((line, i) => {
-        page.drawText(line, {
-          x: x - boxWidth / 2 + padding,
-          y: descStartY - i * 10,
-          size: 7,
-          font: helvetica,
-          color: rgb(1, 1, 1),
-        });
+    // Add PDF popup annotation if description is present
+    // Icon is positioned to the right of the badge
+    if (ann.description) {
+      const iconSize = 12;
+      const iconGap = 2;
+      // NoZoom (16) + NoRotate (8) = 24
+      const annotFlags = 24;
+      const annotDict = pdfDoc.context.obj({
+        Type: 'Annot',
+        Subtype: 'Text', // Text annotation = clickable popup note
+        Rect: [
+          boxX + boxWidth + iconGap,
+          boxY,
+          boxX + boxWidth + iconGap + iconSize,
+          boxY + iconSize,
+        ],
+        Contents: PDFString.of(ann.description),
+        Name: 'Comment', // Icon style shown in PDF viewer
+        C: isPositive ? [0.3, 0.7, 0.3] : [0.7, 0.3, 0.3],
+        F: annotFlags,
       });
+
+      const existingAnnots = page.node.lookup(PDFName.of('Annots'));
+      if (existingAnnots instanceof PDFArray) {
+        existingAnnots.push(pdfDoc.context.register(annotDict));
+      } else {
+        page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([pdfDoc.context.register(annotDict)]));
+      }
     }
   }
 
   return pdfDoc.save();
-}
-
-function wrapText(
-  text: string,
-  maxWidth: number,
-  _font: PDFFont,
-  fontSize: number
-): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let currentLine = "";
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    // Approximate width (pdf-lib font measurement)
-    const testWidth = testLine.length * fontSize * 0.5;
-    if (testWidth > maxWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
-      currentLine = testLine;
-    }
-  }
-  if (currentLine) lines.push(currentLine);
-
-  return lines.slice(0, 4); // Max 4 lines
 }
 
 async function ensureGradedDir(outputDir: string): Promise<string> {

@@ -1,5 +1,7 @@
 import { PDFDocument, rgb, StandardFonts, type PDFFont } from "pdf-lib";
-import type { Annotation } from "./types";
+import { writeFile, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { join } from "@tauri-apps/api/path";
+import type { Annotation, Task } from "./types";
 
 interface ExportOptions {
   pdfBytes: Uint8Array;
@@ -120,14 +122,70 @@ function wrapText(
   return lines.slice(0, 4); // Max 4 lines
 }
 
-export function downloadBlob(bytes: Uint8Array, filename: string) {
-  const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename.replace(".pdf", "_graded.pdf");
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+async function ensureGradedDir(outputDir: string): Promise<string> {
+  const gradedDir = await join(outputDir, "graded");
+  const dirExists = await exists(gradedDir);
+  if (!dirExists) {
+    await mkdir(gradedDir, { recursive: true });
+  }
+  return gradedDir;
+}
+
+export async function savePdfToFolder(
+  bytes: Uint8Array,
+  outputDir: string,
+  filename: string
+): Promise<void> {
+  const gradedDir = await ensureGradedDir(outputDir);
+  const outPath = await join(gradedDir, filename);
+  await writeFile(outPath, bytes);
+}
+
+export interface ReportEntry {
+  filename: string;
+  annotations: Annotation[];
+}
+
+export function generateMarkdownReport(
+  entries: ReportEntry[],
+  tasks: Task[]
+): string {
+  const lines: string[] = ["# Grading Report", ""];
+
+  for (const task of tasks) {
+    lines.push(`## ${task.label} (Max: ${task.maxPoints} points)`, "");
+
+    let hasContent = false;
+    for (const entry of entries) {
+      const taskAnnotations = entry.annotations.filter(
+        (a) => a.taskId === task.id
+      );
+      if (taskAnnotations.length === 0) continue;
+      hasContent = true;
+      lines.push(`### ${entry.filename}`, "");
+      for (const ann of taskAnnotations) {
+        const pointsStr =
+          ann.points > 0 ? `+${ann.points}` : `${ann.points}`;
+        const desc = ann.description ? `: ${ann.description}` : "";
+        lines.push(`- ${ann.label} (${pointsStr})${desc}`);
+      }
+      lines.push("");
+    }
+
+    if (!hasContent) {
+      lines.push("No comments for this task.", "");
+    }
+  }
+
+  return lines.join("\n");
+}
+
+export async function saveMarkdownReport(
+  outputDir: string,
+  content: string
+): Promise<void> {
+  const gradedDir = await ensureGradedDir(outputDir);
+  const outPath = await join(gradedDir, "report.md");
+  const encoder = new TextEncoder();
+  await writeFile(outPath, encoder.encode(content));
 }

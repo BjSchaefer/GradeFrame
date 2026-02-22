@@ -14,12 +14,22 @@ jobs:
         include:
           - platform: ubuntu-22.04
             label: Linux
+            args: ''
+            bundle_path: src-tauri/target/release/bundle
           - platform: macos-latest
             label: macOS-ARM
-          - platform: macos-13
+            target: aarch64-apple-darwin
+            args: '--target aarch64-apple-darwin'
+            bundle_path: src-tauri/target/aarch64-apple-darwin/release/bundle
+          - platform: macos-latest
             label: macOS-Intel
+            target: x86_64-apple-darwin
+            args: '--target x86_64-apple-darwin'
+            bundle_path: src-tauri/target/x86_64-apple-darwin/release/bundle
           - platform: windows-latest
             label: Windows
+            args: ''
+            bundle_path: src-tauri/target/release/bundle
 
     runs-on: ${{ matrix.platform }}
     permissions:
@@ -44,6 +54,8 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Cache Rust dependencies
         uses: actions/cache@v4
@@ -52,18 +64,20 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             src-tauri/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('src-tauri/Cargo.toml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-${{ matrix.target }}-cargo-
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: tauri-build-${{ matrix.label }}
           path: |
-            src-tauri/target/release/bundle/**
+            ${{ matrix.bundle_path }}/**

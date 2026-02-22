@@ -1,14 +1,12 @@
 import { useState } from "react";
-import { Plus, Hash, Pencil } from "lucide-react";
-import type { CommentStamp, ActiveStamp, CorrectionMode } from "@/lib/types";
+import { Plus, Hash } from "lucide-react";
+import type { CommentStamp, ActiveStamp } from "@/lib/types";
 import { CommentStampButton } from "./CommentStampButton";
 import { NewCommentModal } from "./NewCommentModal";
 
 interface StampPaletteProps {
   stamps: CommentStamp[];
   activeStamp: ActiveStamp | null;
-  activeMode: CorrectionMode;
-  activeTaskLabel: string;
   width?: number;
   onSelectStamp: (stamp: ActiveStamp | null) => void;
   onCreateStamp: (stamp: CommentStamp) => void;
@@ -19,8 +17,6 @@ const FIXED_POINTS = [-2, -1, -0.5, 0.5, 1, 2];
 export function StampPalette({
   stamps,
   activeStamp,
-  activeMode,
-  activeTaskLabel,
   width,
   onSelectStamp,
   onCreateStamp,
@@ -34,7 +30,6 @@ export function StampPalette({
   const negativeComments = stamps.filter((s) => s.sign === "negative");
 
   function selectStamp(stamp: ActiveStamp) {
-    if (activeMode === "manual") return;
     onSelectStamp(activeStamp?.id === stamp.id ? null : stamp);
   }
 
@@ -55,30 +50,6 @@ export function StampPalette({
       label: data.label,
       description: data.description,
     });
-  }
-
-  if (activeMode === "manual") {
-    return (
-      <aside
-        className="bg-white border-r border-stone-200 flex flex-col shrink-0 shadow-sm"
-        style={{ width: width ?? 240 }}
-      >
-        <div className="flex-1 overflow-y-auto p-3">
-          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 mt-1">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Pencil className="h-3.5 w-3.5 text-amber-600" />
-              <span className="text-xs font-semibold text-amber-700">
-                Manual Mode
-              </span>
-            </div>
-            <p className="text-xs text-amber-600 leading-relaxed">
-              Enter points for <strong>{activeTaskLabel}</strong> directly in the
-              task panel on the right.
-            </p>
-          </div>
-        </div>
-      </aside>
-    );
   }
 
   return (

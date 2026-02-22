@@ -219,7 +219,6 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         t.id === taskId ? { ...t, mode } : t
       ),
     });
-    if (mode === "manual") setActiveStamp(null);
   }
 
   // ─── Annotation operations ─────────────────────────────────
@@ -459,8 +458,6 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         <StampPalette
           stamps={stamps}
           activeStamp={activeStamp}
-          activeMode={activeMode}
-          activeTaskLabel={activeTask?.label || ""}
           width={leftWidth}
           onSelectStamp={setActiveStamp}
           onCreateStamp={createStamp}

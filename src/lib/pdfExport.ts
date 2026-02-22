@@ -85,7 +85,7 @@ export async function createAnnotatedPdf({
       x: boxX + paddingH,
       y: boxY + paddingV,
       size: fontSize,
-      font: ann.points !== 0 ? fontBold : font,
+      font: font,
       color: textColor,
     });
 

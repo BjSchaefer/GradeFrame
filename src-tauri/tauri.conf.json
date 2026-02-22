@@ -23,13 +23,5 @@
     "security": {
       "csp": null
     }
-  },
-  "plugins": {
-    "fs": {
-      "scope": {
-        "allow": ["**"],
-        "deny": []
-      }
-    }
   }
 }

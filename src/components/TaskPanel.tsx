@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Settings, X, Plus } from "lucide-react";
+import { Pencil, X, Plus } from "lucide-react";
 import type { Task, CorrectionMode } from "@/lib/types";
 
 interface TaskPanelProps {
@@ -10,6 +10,7 @@ interface TaskPanelProps {
   manualPoints: Record<string, number>; // `${filename}_${taskId}` → points
   totalDisplay: number;
   maxTotal: number;
+  width?: number;
   onSelectTask: (taskId: string) => void;
   onSetMode: (taskId: string, mode: CorrectionMode) => void;
   onSetManualPoints: (taskId: string, points: number) => void;
@@ -31,6 +32,7 @@ export function TaskPanel({
   manualPoints,
   totalDisplay,
   maxTotal,
+  width,
   onSelectTask,
   onSetMode,
   onSetManualPoints,
@@ -42,25 +44,28 @@ export function TaskPanel({
   const totalPct = maxTotal > 0 ? Math.max(0, Math.min(100, (totalDisplay / maxTotal) * 100)) : 0;
 
   return (
-    <aside className="w-64 bg-white border-l border-stone-200 flex flex-col shrink-0 shadow-sm">
+    <aside
+      className="bg-white border-l border-stone-200 flex flex-col shrink-0 shadow-sm"
+      style={{ width: width ?? 256 }}
+    >
       {/* Header */}
       <div className="p-3 border-b border-stone-100 flex items-center justify-between">
-        <div>
+        <div className="min-w-0 flex-1 mr-2">
           <h3 className="text-xs font-semibold text-stone-400 uppercase tracking-wider">
             Tasks
           </h3>
-          <p className="text-xs text-stone-400 mt-0.5">{activeFilename}</p>
+          <p className="text-xs text-stone-400 mt-0.5 truncate">{activeFilename}</p>
         </div>
         <button
           onClick={() => setEditing(!editing)}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+          className={`p-1.5 rounded-lg transition-colors cursor-pointer shrink-0 ${
             editing
               ? "bg-teal-100 text-teal-700"
-              : "text-stone-400 hover:bg-stone-100"
+              : "text-stone-500 hover:text-teal-600 hover:bg-stone-100"
           }`}
           title="Edit tasks"
         >
-          <Settings className="h-3.5 w-3.5" />
+          <Pencil className="h-4 w-4" />
         </button>
       </div>
 

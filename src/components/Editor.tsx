@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Folder } from "lucide-react";
 import { loadConfig, saveConfig, listPdfFiles } from "@/lib/config";
 import { createAnnotatedPdf, downloadBlob } from "@/lib/pdfExport";
@@ -32,6 +32,54 @@ export function Editor({ folderPath, onBack }: EditorProps) {
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [manualPoints, setManualPoints] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
+
+  // Sidebar resize state
+  const LEFT_MIN = 180;
+  const LEFT_DEFAULT = 240;
+  const RIGHT_MIN = 200;
+  const RIGHT_DEFAULT = 256;
+  const [leftWidth, setLeftWidth] = useState(LEFT_DEFAULT);
+  const [rightWidth, setRightWidth] = useState(RIGHT_DEFAULT);
+  const dragRef = useRef<{
+    side: "left" | "right";
+    startX: number;
+    startW: number;
+  } | null>(null);
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (!dragRef.current) return;
+      const { side, startX, startW } = dragRef.current;
+      const dx = e.clientX - startX;
+      if (side === "left") {
+        setLeftWidth(Math.max(LEFT_MIN, startW + dx));
+      } else {
+        setRightWidth(Math.max(RIGHT_MIN, startW - dx));
+      }
+    }
+    function onMouseUp() {
+      dragRef.current = null;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "auto";
+    }
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  function startDrag(side: "left" | "right", e: React.MouseEvent) {
+    e.preventDefault();
+    dragRef.current = {
+      side,
+      startX: e.clientX,
+      startW: side === "left" ? leftWidth : rightWidth,
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }
 
   // Load config and PDF list on mount
   useEffect(() => {
@@ -369,12 +417,19 @@ export function Editor({ folderPath, onBack }: EditorProps) {
           activeStamp={activeStamp}
           activeMode={activeMode}
           activeTaskLabel={activeTask?.label || ""}
+          width={leftWidth}
           onSelectStamp={setActiveStamp}
           onCreateStamp={createStamp}
         />
 
+        {/* Left resize handle */}
+        <div
+          className="w-1 cursor-col-resize bg-transparent hover:bg-teal-300 active:bg-teal-400 transition-colors shrink-0"
+          onMouseDown={(e) => startDrag("left", e)}
+        />
+
         {/* Center */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <PdfTabBar
             pdfs={pdfs}
             activeFilename={activeFilename}
@@ -412,6 +467,12 @@ export function Editor({ folderPath, onBack }: EditorProps) {
           )}
         </div>
 
+        {/* Right resize handle */}
+        <div
+          className="w-1 cursor-col-resize bg-transparent hover:bg-teal-300 active:bg-teal-400 transition-colors shrink-0"
+          onMouseDown={(e) => startDrag("right", e)}
+        />
+
         {/* Right Sidebar */}
         <TaskPanel
           tasks={tasks}
@@ -421,6 +482,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
           manualPoints={manualPoints}
           totalDisplay={activeFilename ? getTotalDisplay(activeFilename) : 0}
           maxTotal={maxTotal}
+          width={rightWidth}
           onSelectTask={setActiveTaskId}
           onSetMode={setTaskMode}
           onSetManualPoints={handleSetManualPoints}

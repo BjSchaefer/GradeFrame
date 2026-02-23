@@ -14,7 +14,6 @@ interface PdfViewerProps {
   annotations: Annotation[];
   showAnnotations: boolean;
   activeStamp: ActiveStamp | null;
-  activeTaskId: string | null;
   isManualMode: boolean;
   onToggleAnnotations: () => void;
   onPageClick: (page: number, x: number, y: number) => void;
@@ -26,7 +25,6 @@ export function PdfViewer({
   annotations,
   showAnnotations,
   activeStamp,
-  activeTaskId,
   isManualMode,
   onToggleAnnotations,
   onPageClick,
@@ -98,13 +96,13 @@ export function PdfViewer({
 
   const handleCanvasClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      if (!activeStamp || !activeTaskId || isManualMode) return;
+      if (!activeStamp || isManualMode) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
       onPageClick(currentPage, x, y);
     },
-    [activeStamp, activeTaskId, isManualMode, currentPage, onPageClick]
+    [activeStamp, isManualMode, currentPage, onPageClick]
   );
 
   const filename = pdfPath.split("/").pop() || pdfPath;

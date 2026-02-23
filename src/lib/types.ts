@@ -11,7 +11,7 @@ export interface Task {
 
 export interface Annotation {
   id: string;
-  taskId: string;
+  taskId: string | null;
   stampId: string;
   page: number;
   x: number; // percentage 0–100

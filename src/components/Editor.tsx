@@ -223,7 +223,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
 
   // ─── Annotation operations ─────────────────────────────────
   function addAnnotation(page: number, x: number, y: number) {
-    if (!activeStamp || !activeTaskId || !activeFilename) return;
+    if (!activeStamp || !activeFilename) return;
 
     const ann: Annotation = {
       id: `a${Date.now()}`,
@@ -458,6 +458,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         <StampPalette
           stamps={stamps}
           activeStamp={activeStamp}
+          activeTaskLabel={activeTask?.label ?? null}
           width={leftWidth}
           onSelectStamp={setActiveStamp}
           onCreateStamp={createStamp}
@@ -495,7 +496,6 @@ export function Editor({ folderPath, onBack }: EditorProps) {
               annotations={currentAnnotations}
               showAnnotations={showAnnotations}
               activeStamp={activeStamp}
-              activeTaskId={activeTaskId}
               isManualMode={activeMode === "manual"}
               onToggleAnnotations={() => setShowAnnotations(!showAnnotations)}
               onPageClick={addAnnotation}

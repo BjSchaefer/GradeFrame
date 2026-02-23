@@ -11,7 +11,7 @@ interface TaskPanelProps {
   totalDisplay: number;
   maxTotal: number;
   width?: number;
-  onSelectTask: (taskId: string) => void;
+  onSelectTask: (taskId: string | null) => void;
   onSetMode: (taskId: string, mode: CorrectionMode) => void;
   onSetManualPoints: (taskId: string, points: number) => void;
   onAddTask: (label: string, maxPoints: number) => void;
@@ -83,7 +83,7 @@ export function TaskPanel({
             return (
               <div
                 key={task.id}
-                onClick={() => onSelectTask(task.id)}
+                onClick={() => onSelectTask(isActive ? null : task.id)}
                 className={`p-2.5 rounded-lg cursor-pointer transition-all
                   ${
                     isActive

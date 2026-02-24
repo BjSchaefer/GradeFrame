@@ -259,11 +259,26 @@ export function Editor({ folderPath, onBack }: EditorProps) {
     const grading = { ...config!.grading };
     const existing = grading[activeFilename];
     if (!existing) return;
+
+    const deletedAnn = existing.annotations.find((a) => a.id === id);
     grading[activeFilename] = {
       ...existing,
       annotations: existing.annotations.filter((a) => a.id !== id),
     };
-    persistConfig({ ...config!, grading });
+
+    // Remove comment stamp from sidebar if no annotations reference it anymore
+    let updatedStamps = config!.stamps;
+    if (deletedAnn && !deletedAnn.isPointStamp) {
+      const stampId = deletedAnn.stampId;
+      const stillUsed = Object.values(grading).some((g) =>
+        g.annotations.some((a) => a.stampId === stampId)
+      );
+      if (!stillUsed) {
+        updatedStamps = updatedStamps.filter((s) => s.id !== stampId);
+      }
+    }
+
+    persistConfig({ ...config!, grading, stamps: updatedStamps });
   }
 
   function moveAnnotation(id: string, x: number, y: number) {

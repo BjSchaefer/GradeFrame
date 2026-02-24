@@ -135,7 +135,7 @@ export async function createAnnotatedPdf({
     const padH = 4 * scale;
     const padV = 3 * scale;
 
-    const sigmaLabel = "\u03A3";
+    const sigmaLabel = "Sum";
     const totalPoints = pointsTable.tasks.reduce((s, t) => s + t.points, 0);
     const totalMax = pointsTable.tasks.reduce((s, t) => s + t.maxPoints, 0);
     const sigmaValue = `${totalPoints}/${totalMax}`;

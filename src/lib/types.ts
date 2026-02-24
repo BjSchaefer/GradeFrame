@@ -28,6 +28,7 @@ export interface CommentStamp {
   description: string;
   points: number;
   sign: "positive" | "negative";
+  taskId?: string;
 }
 
 export interface PdfGrading {

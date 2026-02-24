@@ -7,6 +7,7 @@ import { NewCommentModal } from "./NewCommentModal";
 interface StampPaletteProps {
   stamps: CommentStamp[];
   activeStamp: ActiveStamp | null;
+  activeTaskId: string | null;
   activeTaskLabel: string | null;
   width?: number;
   onSelectStamp: (stamp: ActiveStamp | null) => void;
@@ -18,6 +19,7 @@ const FIXED_POINTS = [-2, -1, -0.5, 0.5, 1, 2];
 export function StampPalette({
   stamps,
   activeStamp,
+  activeTaskId,
   activeTaskLabel,
   width,
   onSelectStamp,
@@ -28,8 +30,11 @@ export function StampPalette({
     "positive" | "negative" | null
   >(null);
 
-  const positiveComments = stamps.filter((s) => s.sign === "positive");
-  const negativeComments = stamps.filter((s) => s.sign === "negative");
+  const filteredStamps = stamps.filter(
+    (s) => !s.taskId || s.taskId === activeTaskId
+  );
+  const positiveComments = filteredStamps.filter((s) => s.sign === "positive");
+  const negativeComments = filteredStamps.filter((s) => s.sign === "negative");
 
   function selectStamp(stamp: ActiveStamp) {
     onSelectStamp(activeStamp?.id === stamp.id ? null : stamp);

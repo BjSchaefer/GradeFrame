@@ -296,12 +296,15 @@ export function Editor({ folderPath, onBack }: EditorProps) {
 
   // ─── Stamp operations ──────────────────────────────────────
   function createStamp(stamp: CommentStamp) {
-    persistConfig({ ...config!, stamps: [...config!.stamps, stamp] });
+    const stampWithTask: CommentStamp = activeTaskId
+      ? { ...stamp, taskId: activeTaskId }
+      : stamp;
+    persistConfig({ ...config!, stamps: [...config!.stamps, stampWithTask] });
     setActiveStamp({
-      id: stamp.id,
-      points: stamp.points,
-      label: stamp.label,
-      description: stamp.description,
+      id: stampWithTask.id,
+      points: stampWithTask.points,
+      label: stampWithTask.label,
+      description: stampWithTask.description,
     });
   }
 
@@ -520,6 +523,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         <StampPalette
           stamps={stamps}
           activeStamp={activeStamp}
+          activeTaskId={activeTaskId}
           activeTaskLabel={activeTask?.label ?? null}
           width={leftWidth}
           onSelectStamp={setActiveStamp}

@@ -6,11 +6,11 @@
 
 Grade exams, exercise sheets, and student submissions — directly on the PDF.
 No cloud. No subscriptions. Just open a folder and start correcting.
-
+<!-- 
 [![macOS](https://img.shields.io/badge/macOS-Download-000?logo=apple&logoColor=white)](https://github.com/BjSchaefer/gradeframe/releases/latest/download/GradeFrame_universal.dmg)
 [![Windows](https://img.shields.io/badge/Windows-Download-0078D4?logo=windows&logoColor=white)](https://github.com/BjSchaefer/gradeframe/releases/latest/download/GradeFrame_x64-setup.exe)
 [![Linux (.deb)](https://img.shields.io/badge/Linux%20.deb-Download-FCC624?logo=linux&logoColor=black)](https://github.com/BjSchaefer/gradeframe/releases/latest/download/GradeFrame_amd64.deb)
-[![Linux (.AppImage)](https://img.shields.io/badge/Linux%20.AppImage-Download-FCC624?logo=linux&logoColor=black)](https://github.com/BjSchaefer/gradeframe/releases/latest/download/GradeFrame_amd64.AppImage)
+[![Linux (.AppImage)](https://img.shields.io/badge/Linux%20.AppImage-Download-FCC624?logo=linux&logoColor=black)](https://github.com/BjSchaefer/gradeframe/releases/latest/download/GradeFrame_amd64.AppImage) -->
 
 [All releases & changelogs →](https://github.com/BjSchaefer/gradeframe/releases)
 

@@ -187,7 +187,6 @@ export function Editor({ folderPath, onBack }: EditorProps) {
   const tasks = config.tasks;
   const stamps = config.stamps;
   const activeTask = tasks.find((t) => t.id === activeTaskId);
-  const activeMode: CorrectionMode = activeTask?.mode || "additive";
 
   // Get annotations for active PDF
   const currentGrading = activeFilename
@@ -577,7 +576,6 @@ export function Editor({ folderPath, onBack }: EditorProps) {
               annotations={currentAnnotations}
               showAnnotations={showAnnotations}
               activeStamp={activeStamp}
-              isManualMode={activeMode === "manual"}
               taskPoints={taskPointsForTable}
               pointsTableConfig={pointsTableConfig}
               onToggleAnnotations={() => setShowAnnotations(!showAnnotations)}

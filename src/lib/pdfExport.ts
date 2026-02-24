@@ -8,7 +8,7 @@ interface ExportOptions {
   annotations: Annotation[];
   filename: string;
   pointsTable?: {
-    tasks: { label: string; points: number }[];
+    tasks: { label: string; points: number; maxPoints: number }[];
     config: PointsTableConfig;
   };
 }
@@ -135,11 +135,25 @@ export async function createAnnotatedPdf({
     const padH = 4 * scale;
     const padV = 3 * scale;
 
+    const sigmaLabel = "\u03A3";
+    const totalPoints = pointsTable.tasks.reduce((s, t) => s + t.points, 0);
+    const totalMax = pointsTable.tasks.reduce((s, t) => s + t.maxPoints, 0);
+    const sigmaValue = `${totalPoints}/${totalMax}`;
+
+    // Build columns: all tasks + sigma
+    const columns = [
+      ...pointsTable.tasks.map((t) => ({
+        header: t.label,
+        value: `${t.points}/${t.maxPoints}`,
+      })),
+      { header: sigmaLabel, value: sigmaValue },
+    ];
+
     // Calculate cell widths based on content
-    const cellWidths = pointsTable.tasks.map((t) => {
-      const labelW = font.widthOfTextAtSize(t.label, tableFontSize);
-      const pointsW = font.widthOfTextAtSize(String(t.points), tableFontSize);
-      return Math.max(labelW, pointsW) + padH * 2;
+    const cellWidths = columns.map((col) => {
+      const labelW = font.widthOfTextAtSize(col.header, tableFontSize);
+      const valueW = font.widthOfTextAtSize(col.value, tableFontSize);
+      return Math.max(labelW, valueW) + padH * 2;
     });
 
     const cellHeight = tableFontSize + padV * 2;
@@ -152,8 +166,8 @@ export async function createAnnotatedPdf({
 
     // Header row (red background, white text)
     let currentX = tableX;
-    for (let i = 0; i < pointsTable.tasks.length; i++) {
-      const task = pointsTable.tasks[i];
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
       const w = cellWidths[i];
 
       firstPage.drawRectangle({
@@ -166,8 +180,8 @@ export async function createAnnotatedPdf({
         borderWidth: 0.5 * scale,
       });
 
-      const textW = font.widthOfTextAtSize(task.label, tableFontSize);
-      firstPage.drawText(task.label, {
+      const textW = font.widthOfTextAtSize(col.header, tableFontSize);
+      firstPage.drawText(col.header, {
         x: currentX + (w - textW) / 2,
         y: tableTopY - cellHeight + padV,
         size: tableFontSize,
@@ -180,10 +194,9 @@ export async function createAnnotatedPdf({
 
     // Data row (white background, red text)
     currentX = tableX;
-    for (let i = 0; i < pointsTable.tasks.length; i++) {
-      const task = pointsTable.tasks[i];
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
       const w = cellWidths[i];
-      const pointsStr = String(task.points);
 
       firstPage.drawRectangle({
         x: currentX,
@@ -195,8 +208,8 @@ export async function createAnnotatedPdf({
         borderWidth: 0.5 * scale,
       });
 
-      const textW = font.widthOfTextAtSize(pointsStr, tableFontSize);
-      firstPage.drawText(pointsStr, {
+      const textW = font.widthOfTextAtSize(col.value, tableFontSize);
+      firstPage.drawText(col.value, {
         x: currentX + (w - textW) / 2,
         y: tableTopY - cellHeight * 2 + padV,
         size: tableFontSize,

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import type { PointsTableConfig } from "@/lib/types";
 
 interface PointsTableProps {
-  tasks: { label: string; points: number }[];
+  tasks: { label: string; points: number; maxPoints: number }[];
   config: PointsTableConfig;
   containerRef: React.RefObject<HTMLDivElement | null>;
   onUpdateConfig: (config: PointsTableConfig) => void;
@@ -120,6 +120,9 @@ export function PointsTable({
 
   if (tasks.length === 0) return null;
 
+  const totalPoints = tasks.reduce((s, t) => s + t.points, 0);
+  const totalMaxPoints = tasks.reduce((s, t) => s + t.maxPoints, 0);
+
   return (
     <div
       ref={tableRef}
@@ -147,6 +150,9 @@ export function PointsTable({
                   {t.label}
                 </th>
               ))}
+              <th className="px-3 py-1.5 text-xs font-bold text-white border border-red-400 whitespace-nowrap">
+                Σ
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -156,9 +162,12 @@ export function PointsTable({
                   key={i}
                   className="px-3 py-1.5 text-xs font-bold font-mono text-red-700 border border-red-300 text-center whitespace-nowrap"
                 >
-                  {t.points}
+                  {t.points}/{t.maxPoints}
                 </td>
               ))}
+              <td className="px-3 py-1.5 text-xs font-bold font-mono text-red-700 border border-red-300 text-center whitespace-nowrap">
+                {totalPoints}/{totalMaxPoints}
+              </td>
             </tr>
           </tbody>
         </table>

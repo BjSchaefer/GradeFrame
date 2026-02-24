@@ -266,6 +266,34 @@ export function Editor({ folderPath, onBack }: EditorProps) {
     persistConfig({ ...config!, grading });
   }
 
+  function moveAnnotation(id: string, x: number, y: number) {
+    if (!activeFilename) return;
+    const grading = { ...config!.grading };
+    const existing = grading[activeFilename];
+    if (!existing) return;
+    grading[activeFilename] = {
+      ...existing,
+      annotations: existing.annotations.map((a) =>
+        a.id === id ? { ...a, x, y } : a
+      ),
+    };
+    persistConfig({ ...config!, grading });
+  }
+
+  function updateAnnotation(id: string, updates: { label: string; description: string; points: number }) {
+    if (!activeFilename) return;
+    const grading = { ...config!.grading };
+    const existing = grading[activeFilename];
+    if (!existing) return;
+    grading[activeFilename] = {
+      ...existing,
+      annotations: existing.annotations.map((a) =>
+        a.id === id ? { ...a, ...updates } : a
+      ),
+    };
+    persistConfig({ ...config!, grading });
+  }
+
   // ─── Stamp operations ──────────────────────────────────────
   function createStamp(stamp: CommentStamp) {
     persistConfig({ ...config!, stamps: [...config!.stamps, stamp] });
@@ -343,6 +371,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
   const taskPointsForTable = tasks.map((t) => ({
     label: t.label,
     points: displayPoints[t.id] ?? 0,
+    maxPoints: t.maxPoints,
   }));
 
   const pointsTableConfig: PointsTableConfig = config.pointsTable ?? {
@@ -381,6 +410,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         tasks: tasks.map((t) => ({
           label: t.label,
           points: getDisplayPointsForTask(activeFilename, t),
+          maxPoints: t.maxPoints,
         })),
         config: pointsTableConfig,
       } : undefined,
@@ -421,6 +451,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
           tasks: tasks.map((t) => ({
             label: t.label,
             points: getDisplayPointsForTask(pdf.filename, t),
+            maxPoints: t.maxPoints,
           })),
           config: pointsTableConfig,
         } : undefined,
@@ -533,6 +564,8 @@ export function Editor({ folderPath, onBack }: EditorProps) {
               onToggleAnnotations={() => setShowAnnotations(!showAnnotations)}
               onPageClick={addAnnotation}
               onDeleteAnnotation={deleteAnnotation}
+              onMoveAnnotation={moveAnnotation}
+              onUpdateAnnotation={updateAnnotation}
               onUpdatePointsTable={handleUpdatePointsTable}
             />
           ) : (

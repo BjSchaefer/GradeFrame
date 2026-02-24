@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Hash } from "lucide-react";
+import { Plus, Hash, ClipboardList } from "lucide-react";
 import type { CommentStamp, ActiveStamp } from "@/lib/types";
 import { CommentStampButton } from "./CommentStampButton";
 import { NewCommentModal } from "./NewCommentModal";
@@ -7,6 +7,8 @@ import { NewCommentModal } from "./NewCommentModal";
 interface StampPaletteProps {
   stamps: CommentStamp[];
   activeStamp: ActiveStamp | null;
+  activeTaskId: string | null;
+  activeTaskLabel: string | null;
   width?: number;
   onSelectStamp: (stamp: ActiveStamp | null) => void;
   onCreateStamp: (stamp: CommentStamp) => void;
@@ -17,6 +19,8 @@ const FIXED_POINTS = [-2, -1, -0.5, 0.5, 1, 2];
 export function StampPalette({
   stamps,
   activeStamp,
+  activeTaskId,
+  activeTaskLabel,
   width,
   onSelectStamp,
   onCreateStamp,
@@ -26,8 +30,11 @@ export function StampPalette({
     "positive" | "negative" | null
   >(null);
 
-  const positiveComments = stamps.filter((s) => s.sign === "positive");
-  const negativeComments = stamps.filter((s) => s.sign === "negative");
+  const filteredStamps = stamps.filter(
+    (s) => !s.taskId || s.taskId === activeTaskId
+  );
+  const positiveComments = filteredStamps.filter((s) => s.sign === "positive");
+  const negativeComments = filteredStamps.filter((s) => s.sign === "negative");
 
   function selectStamp(stamp: ActiveStamp) {
     onSelectStamp(activeStamp?.id === stamp.id ? null : stamp);
@@ -58,6 +65,20 @@ export function StampPalette({
       style={{ width: width ?? 240 }}
     >
       <div className="flex-1 overflow-y-auto p-3 space-y-5">
+        {/* Active Task Display */}
+        <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-stone-50 border border-stone-200">
+          <ClipboardList className="h-3.5 w-3.5 text-stone-400 shrink-0" />
+          {activeTaskLabel ? (
+            <span className="text-xs font-medium text-teal-700 truncate">
+              Task: {activeTaskLabel}
+            </span>
+          ) : (
+            <span className="text-xs font-medium text-stone-400 truncate">
+              No task selected
+            </span>
+          )}
+        </div>
+
         {/* Point Stamps */}
         <div>
           <label className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2 block">

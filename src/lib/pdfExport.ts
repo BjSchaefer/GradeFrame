@@ -1,17 +1,22 @@
 import { PDFDocument, rgb, StandardFonts, PDFString, PDFName, PDFArray } from "pdf-lib";
 import { writeFile, mkdir, exists } from "@tauri-apps/plugin-fs";
 import { join } from "@tauri-apps/api/path";
-import type { Annotation, Task } from "./types";
+import type { Annotation, Task, PointsTableConfig } from "./types";
 
 interface ExportOptions {
   pdfBytes: Uint8Array;
   annotations: Annotation[];
   filename: string;
+  pointsTable?: {
+    tasks: { label: string; points: number; maxPoints: number }[];
+    config: PointsTableConfig;
+  };
 }
 
 export async function createAnnotatedPdf({
   pdfBytes,
   annotations,
+  pointsTable,
 }: ExportOptions): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(pdfBytes);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -116,6 +121,103 @@ export async function createAnnotatedPdf({
       } else {
         page.node.set(PDFName.of('Annots'), pdfDoc.context.obj([pdfDoc.context.register(annotDict)]));
       }
+    }
+  }
+
+  // Draw points summary table on page 1
+  if (pointsTable && pointsTable.tasks.length > 0 && pages.length > 0) {
+    const firstPage = pages[0];
+    const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+    const cfg = pointsTable.config;
+
+    const scale = cfg.scale;
+    const tableFontSize = 8 * scale;
+    const padH = 4 * scale;
+    const padV = 3 * scale;
+
+    const sigmaLabel = "Sum";
+    const totalPoints = pointsTable.tasks.reduce((s, t) => s + t.points, 0);
+    const totalMax = pointsTable.tasks.reduce((s, t) => s + t.maxPoints, 0);
+    const sigmaValue = `${totalPoints}/${totalMax}`;
+
+    // Build columns: all tasks + sigma
+    const columns = [
+      ...pointsTable.tasks.map((t) => ({
+        header: t.label,
+        value: `${t.points}/${t.maxPoints}`,
+      })),
+      { header: sigmaLabel, value: sigmaValue },
+    ];
+
+    // Calculate cell widths based on content
+    const cellWidths = columns.map((col) => {
+      const labelW = font.widthOfTextAtSize(col.header, tableFontSize);
+      const valueW = font.widthOfTextAtSize(col.value, tableFontSize);
+      return Math.max(labelW, valueW) + padH * 2;
+    });
+
+    const cellHeight = tableFontSize + padV * 2;
+    const tableX = (cfg.x / 100) * pageWidth;
+    const tableTopY = pageHeight - (cfg.y / 100) * pageHeight;
+
+    const red = rgb(0.9, 0.2, 0.2);
+    const darkRed = rgb(0.6, 0.1, 0.1);
+    const white = rgb(1, 1, 1);
+
+    // Header row (red background, white text)
+    let currentX = tableX;
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      const w = cellWidths[i];
+
+      firstPage.drawRectangle({
+        x: currentX,
+        y: tableTopY - cellHeight,
+        width: w,
+        height: cellHeight,
+        color: red,
+        borderColor: darkRed,
+        borderWidth: 0.5 * scale,
+      });
+
+      const textW = font.widthOfTextAtSize(col.header, tableFontSize);
+      firstPage.drawText(col.header, {
+        x: currentX + (w - textW) / 2,
+        y: tableTopY - cellHeight + padV,
+        size: tableFontSize,
+        font,
+        color: white,
+      });
+
+      currentX += w;
+    }
+
+    // Data row (white background, red text)
+    currentX = tableX;
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      const w = cellWidths[i];
+
+      firstPage.drawRectangle({
+        x: currentX,
+        y: tableTopY - cellHeight * 2,
+        width: w,
+        height: cellHeight,
+        color: white,
+        borderColor: darkRed,
+        borderWidth: 0.5 * scale,
+      });
+
+      const textW = font.widthOfTextAtSize(col.value, tableFontSize);
+      firstPage.drawText(col.value, {
+        x: currentX + (w - textW) / 2,
+        y: tableTopY - cellHeight * 2 + padV,
+        size: tableFontSize,
+        font,
+        color: darkRed,
+      });
+
+      currentX += w;
     }
   }
 

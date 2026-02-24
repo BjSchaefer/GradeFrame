@@ -22,6 +22,7 @@ import type {
   ActiveStamp,
   CorrectionMode,
   PdfFile,
+  PointsTableConfig,
 } from "@/lib/types";
 
 interface EditorProps {
@@ -186,7 +187,6 @@ export function Editor({ folderPath, onBack }: EditorProps) {
   const tasks = config.tasks;
   const stamps = config.stamps;
   const activeTask = tasks.find((t) => t.id === activeTaskId);
-  const activeMode: CorrectionMode = activeTask?.mode || "additive";
 
   // Get annotations for active PDF
   const currentGrading = activeFilename
@@ -223,7 +223,7 @@ export function Editor({ folderPath, onBack }: EditorProps) {
 
   // ─── Annotation operations ─────────────────────────────────
   function addAnnotation(page: number, x: number, y: number) {
-    if (!activeStamp || !activeTaskId || !activeFilename) return;
+    if (!activeStamp || !activeFilename) return;
 
     const ann: Annotation = {
       id: `a${Date.now()}`,
@@ -258,21 +258,67 @@ export function Editor({ folderPath, onBack }: EditorProps) {
     const grading = { ...config!.grading };
     const existing = grading[activeFilename];
     if (!existing) return;
+
+    const deletedAnn = existing.annotations.find((a) => a.id === id);
     grading[activeFilename] = {
       ...existing,
       annotations: existing.annotations.filter((a) => a.id !== id),
+    };
+
+    // Remove comment stamp from sidebar if no annotations reference it anymore
+    let updatedStamps = config!.stamps;
+    if (deletedAnn && !deletedAnn.isPointStamp) {
+      const stampId = deletedAnn.stampId;
+      const stillUsed = Object.values(grading).some((g) =>
+        g.annotations.some((a) => a.stampId === stampId)
+      );
+      if (!stillUsed) {
+        updatedStamps = updatedStamps.filter((s) => s.id !== stampId);
+      }
+    }
+
+    persistConfig({ ...config!, grading, stamps: updatedStamps });
+  }
+
+  function moveAnnotation(id: string, x: number, y: number) {
+    if (!activeFilename) return;
+    const grading = { ...config!.grading };
+    const existing = grading[activeFilename];
+    if (!existing) return;
+    grading[activeFilename] = {
+      ...existing,
+      annotations: existing.annotations.map((a) =>
+        a.id === id ? { ...a, x, y } : a
+      ),
+    };
+    persistConfig({ ...config!, grading });
+  }
+
+  function updateAnnotation(id: string, updates: { label: string; description: string; points: number }) {
+    if (!activeFilename) return;
+    const grading = { ...config!.grading };
+    const existing = grading[activeFilename];
+    if (!existing) return;
+    grading[activeFilename] = {
+      ...existing,
+      annotations: existing.annotations.map((a) =>
+        a.id === id ? { ...a, ...updates } : a
+      ),
     };
     persistConfig({ ...config!, grading });
   }
 
   // ─── Stamp operations ──────────────────────────────────────
   function createStamp(stamp: CommentStamp) {
-    persistConfig({ ...config!, stamps: [...config!.stamps, stamp] });
+    const stampWithTask: CommentStamp = activeTaskId
+      ? { ...stamp, taskId: activeTaskId }
+      : stamp;
+    persistConfig({ ...config!, stamps: [...config!.stamps, stampWithTask] });
     setActiveStamp({
-      id: stamp.id,
-      points: stamp.points,
-      label: stamp.label,
-      description: stamp.description,
+      id: stampWithTask.id,
+      points: stampWithTask.points,
+      label: stampWithTask.label,
+      description: stampWithTask.description,
     });
   }
 
@@ -338,6 +384,23 @@ export function Editor({ folderPath, onBack }: EditorProps) {
     totalPoints[pdf.filename] = getTotalDisplay(pdf.filename);
   });
 
+  // ─── Points table ─────────────────────────────────────────
+  const taskPointsForTable = tasks.map((t) => ({
+    label: t.label,
+    points: displayPoints[t.id] ?? 0,
+    maxPoints: t.maxPoints,
+  }));
+
+  const pointsTableConfig: PointsTableConfig = config.pointsTable ?? {
+    x: 2,
+    y: 2,
+    scale: 1,
+  };
+
+  function handleUpdatePointsTable(tableConfig: PointsTableConfig) {
+    persistConfig({ ...config!, pointsTable: tableConfig });
+  }
+
   // ─── Export ────────────────────────────────────────────────
   async function handleExportCurrent() {
     if (!activeFilename) return;
@@ -360,6 +423,14 @@ export function Editor({ folderPath, onBack }: EditorProps) {
       pdfBytes,
       annotations,
       filename: activeFilename,
+      pointsTable: tasks.length > 0 ? {
+        tasks: tasks.map((t) => ({
+          label: t.label,
+          points: getDisplayPointsForTask(activeFilename, t),
+          maxPoints: t.maxPoints,
+        })),
+        config: pointsTableConfig,
+      } : undefined,
     });
     await savePdfToFolder(result, selectedDir, activeFilename);
 
@@ -393,6 +464,14 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         pdfBytes,
         annotations,
         filename: pdf.filename,
+        pointsTable: tasks.length > 0 ? {
+          tasks: tasks.map((t) => ({
+            label: t.label,
+            points: getDisplayPointsForTask(pdf.filename, t),
+            maxPoints: t.maxPoints,
+          })),
+          config: pointsTableConfig,
+        } : undefined,
       });
       await savePdfToFolder(result, selectedDir, pdf.filename);
       reportEntries.push({ filename: pdf.filename, annotations });
@@ -458,6 +537,8 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         <StampPalette
           stamps={stamps}
           activeStamp={activeStamp}
+          activeTaskId={activeTaskId}
+          activeTaskLabel={activeTask?.label ?? null}
           width={leftWidth}
           onSelectStamp={setActiveStamp}
           onCreateStamp={createStamp}
@@ -495,11 +576,14 @@ export function Editor({ folderPath, onBack }: EditorProps) {
               annotations={currentAnnotations}
               showAnnotations={showAnnotations}
               activeStamp={activeStamp}
-              activeTaskId={activeTaskId}
-              isManualMode={activeMode === "manual"}
+              taskPoints={taskPointsForTable}
+              pointsTableConfig={pointsTableConfig}
               onToggleAnnotations={() => setShowAnnotations(!showAnnotations)}
               onPageClick={addAnnotation}
               onDeleteAnnotation={deleteAnnotation}
+              onMoveAnnotation={moveAnnotation}
+              onUpdateAnnotation={updateAnnotation}
+              onUpdatePointsTable={handleUpdatePointsTable}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center bg-stone-200">

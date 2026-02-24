@@ -22,6 +22,7 @@ import type {
   ActiveStamp,
   CorrectionMode,
   PdfFile,
+  PointsTableConfig,
 } from "@/lib/types";
 
 interface EditorProps {
@@ -338,6 +339,22 @@ export function Editor({ folderPath, onBack }: EditorProps) {
     totalPoints[pdf.filename] = getTotalDisplay(pdf.filename);
   });
 
+  // ─── Points table ─────────────────────────────────────────
+  const taskPointsForTable = tasks.map((t) => ({
+    label: t.label,
+    points: displayPoints[t.id] ?? 0,
+  }));
+
+  const pointsTableConfig: PointsTableConfig = config.pointsTable ?? {
+    x: 2,
+    y: 2,
+    scale: 1,
+  };
+
+  function handleUpdatePointsTable(tableConfig: PointsTableConfig) {
+    persistConfig({ ...config!, pointsTable: tableConfig });
+  }
+
   // ─── Export ────────────────────────────────────────────────
   async function handleExportCurrent() {
     if (!activeFilename) return;
@@ -360,6 +377,13 @@ export function Editor({ folderPath, onBack }: EditorProps) {
       pdfBytes,
       annotations,
       filename: activeFilename,
+      pointsTable: tasks.length > 0 ? {
+        tasks: tasks.map((t) => ({
+          label: t.label,
+          points: getDisplayPointsForTask(activeFilename, t),
+        })),
+        config: pointsTableConfig,
+      } : undefined,
     });
     await savePdfToFolder(result, selectedDir, activeFilename);
 
@@ -393,6 +417,13 @@ export function Editor({ folderPath, onBack }: EditorProps) {
         pdfBytes,
         annotations,
         filename: pdf.filename,
+        pointsTable: tasks.length > 0 ? {
+          tasks: tasks.map((t) => ({
+            label: t.label,
+            points: getDisplayPointsForTask(pdf.filename, t),
+          })),
+          config: pointsTableConfig,
+        } : undefined,
       });
       await savePdfToFolder(result, selectedDir, pdf.filename);
       reportEntries.push({ filename: pdf.filename, annotations });
@@ -497,9 +528,12 @@ export function Editor({ folderPath, onBack }: EditorProps) {
               showAnnotations={showAnnotations}
               activeStamp={activeStamp}
               isManualMode={activeMode === "manual"}
+              taskPoints={taskPointsForTable}
+              pointsTableConfig={pointsTableConfig}
               onToggleAnnotations={() => setShowAnnotations(!showAnnotations)}
               onPageClick={addAnnotation}
               onDeleteAnnotation={deleteAnnotation}
+              onUpdatePointsTable={handleUpdatePointsTable}
             />
           ) : (
             <div className="flex-1 flex items-center justify-center bg-stone-200">

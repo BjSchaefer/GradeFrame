@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 import { Eye, EyeOff, MessageCircle, Trash2 } from "lucide-react";
-import type { Annotation, ActiveStamp } from "@/lib/types";
+import type { Annotation, ActiveStamp, PointsTableConfig } from "@/lib/types";
+import { PointsTable } from "./PointsTable";
 
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -15,9 +16,12 @@ interface PdfViewerProps {
   showAnnotations: boolean;
   activeStamp: ActiveStamp | null;
   isManualMode: boolean;
+  taskPoints: { label: string; points: number }[];
+  pointsTableConfig: PointsTableConfig;
   onToggleAnnotations: () => void;
   onPageClick: (page: number, x: number, y: number) => void;
   onDeleteAnnotation: (id: string) => void;
+  onUpdatePointsTable: (config: PointsTableConfig) => void;
 }
 
 export function PdfViewer({
@@ -26,15 +30,19 @@ export function PdfViewer({
   showAnnotations,
   activeStamp,
   isManualMode,
+  taskPoints,
+  pointsTableConfig,
   onToggleAnnotations,
   onPageClick,
   onDeleteAnnotation,
+  onUpdatePointsTable,
 }: PdfViewerProps) {
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Load PDF
   useEffect(() => {
@@ -153,12 +161,22 @@ export function PdfViewer({
 
       {/* PDF Canvas */}
       <div className="flex justify-center py-4 px-4">
-        <div className="relative pdf-page-shadow">
+        <div ref={containerRef} className="relative pdf-page-shadow">
           <canvas
             ref={canvasRef}
             onClick={handleCanvasClick}
             className={`bg-white rounded-sm ${canPlace ? "cursor-crosshair" : "cursor-default"}`}
           />
+
+          {/* Points summary table */}
+          {showAnnotations && currentPage === 1 && (
+            <PointsTable
+              tasks={taskPoints}
+              config={pointsTableConfig}
+              containerRef={containerRef}
+              onUpdateConfig={onUpdatePointsTable}
+            />
+          )}
 
           {/* Annotation overlays */}
           {showAnnotations &&

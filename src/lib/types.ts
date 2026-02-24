@@ -40,6 +40,7 @@ export interface ProjectConfig {
   tasks: Task[];
   stamps: CommentStamp[];
   grading: Record<string, PdfGrading>; // filename → grading data
+  pointsTable?: PointsTableConfig;
 }
 
 export interface RecentFolder {
@@ -60,4 +61,12 @@ export interface ActiveStamp {
   points: number;
   label?: string;
   description?: string;
+}
+
+// ─── Points Table ────────────────────────────────────────────
+
+export interface PointsTableConfig {
+  x: number; // top-left x as percentage 0–100
+  y: number; // top-left y as percentage 0–100
+  scale: number; // scale factor (default 1)
 }

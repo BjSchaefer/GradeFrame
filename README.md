@@ -52,11 +52,12 @@ What's more, a **generated report** collects all feedback in one file - so the l
 ## Quick Start
 
 1. **Download & install** GradeFrame for your platform using the badges above.
-2. **Launch** the app and click **Open Folder…**.
-3. **Select a directory** containing the student PDF files you want to grade.
-4. **Define tasks** in the right-hand panel (e.g. *Task 1 — 10 pts, subtractive*).
-5. **Select a stamp** (point value or comment) from the left-hand palette, then **click on the PDF** to place it.
-6. **Export** — hit the Export button to generate annotated PDFs and a grading report in the `graded/` subfolder.
+   - *Note*: On MacOS the program may be marked as damaged because of strict security measures. In this case execute `xattr -d com.apple.quarantine /path/to/gradeframe` in the Terminal to remove the quarantine flag.
+3. **Launch** the app and click **Open Folder…**.
+4. **Select a directory** containing the student PDF files you want to grade.
+5. **Define tasks** in the right-hand panel (e.g. *Task 1 — 10 pts, subtractive*).
+6. **Select a stamp** (point value or comment) from the left-hand palette, then **click on the PDF** to place it.
+7. **Export** — hit the Export button to generate annotated PDFs and a grading report in the `graded/` subfolder.
 
 ```
 YourFolder/
